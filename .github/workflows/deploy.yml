@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  id-token: write
+  contents: read
+
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -27,6 +32,14 @@ jobs:
 
       - name: Test
         run: npm run test:coverage
+      
+      - name: Azure login (OIDC)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Build (production)
         run: npm run build:prod
