@@ -35,11 +35,15 @@ npm run format:check
 npm run build:prod
 ```
 
-Static output in `dist/azure-quiz-frontend/browser` (that's the folder to point to as
-`output_location` when deploying to Azure Static Web Apps).
+Static output in `dist/azure-quiz-frontend/browser` — with `skip_app_build: true` (used in this
+project's pipeline), that's the folder to point to as `app_location`, with `output_location` left
+empty (see `.github/workflows/deploy.yml`).
 
-Before building for a real deployment, update `src/environments/environment.ts` with the deployed
-backend API URL (`apiBaseUrl`).
+`src/environments/environment.ts` ships with placeholder tokens (`REPLACE_WITH_PROD_API_URL`,
+`__BACKEND_API_KEY__`) and must never be edited by hand with real values: the CI pipeline resolves
+the backend App Service and the Key Vault **by Azure tag** and substitutes both tokens via `sed`,
+right before this build step, on the ephemeral CI runner only. See the
+[infra repo's README](https://github.com/jaims-31/bilan-azure-quiz-infra#cicd) for the full mechanism.
 
 
 ## Structure
