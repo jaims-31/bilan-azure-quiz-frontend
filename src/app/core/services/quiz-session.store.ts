@@ -15,7 +15,7 @@ export class QuizSessionStore {
 
   readonly currentQuestion = computed(() => {
     const session = this.session();
-    return session ? (session.questions[this.currentIndex()] ?? null) : null;
+    return session ? session.questions[this.currentIndex()] ?? null : null;
   });
 
   readonly isLastQuestion = computed(() => {
@@ -44,12 +44,14 @@ export class QuizSessionStore {
     if (!session || !question) {
       throw new Error('No active question to answer');
     }
-    return this.api.submitAnswer(session.sessionId, question.questionId, { selectedOptionIds }).pipe(
-      tap(result => {
-        this.lastResult.set(result);
-        this.answeredQuestionIds.update(ids => new Set(ids).add(question.questionId));
-      })
-    );
+    return this.api
+      .submitAnswer(session.sessionId, question.questionId, { selectedOptionIds })
+      .pipe(
+        tap(result => {
+          this.lastResult.set(result);
+          this.answeredQuestionIds.update(ids => new Set(ids).add(question.questionId));
+        })
+      );
   }
 
   goToNextQuestion(): void {
