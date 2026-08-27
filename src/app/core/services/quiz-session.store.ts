@@ -15,7 +15,7 @@ export class QuizSessionStore {
 
   readonly currentQuestion = computed(() => {
     const session = this.session();
-    return session ? session.questions[this.currentIndex()] ?? null : null;
+    return session ? (session.questions[this.currentIndex()] ?? null) : null;
   });
 
   readonly isLastQuestion = computed(() => {

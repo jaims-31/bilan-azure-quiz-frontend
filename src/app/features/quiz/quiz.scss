@@ -41,7 +41,9 @@
   border-radius: 12px;
   border: 1.5px solid var(--mat-sys-outline-variant);
   background: var(--mat-sys-surface-container-low);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 
   &.selected {
     border-color: var(--mat-sys-primary);
