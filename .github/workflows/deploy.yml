@@ -43,6 +43,7 @@ jobs:
 
       - name: Resolve backend URL and API key by tag
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: resolve
         run: |
           BACKEND_HOSTNAME=$(az webapp list --resource-group fbarryRG --query "[?tags.composant=='backend'].defaultHostName" -o tsv)
           KEY_VAULT_NAME=$(az keyvault list --resource-group fbarryRG --query "[?tags.composant=='key-vault'].name" -o tsv)
@@ -51,6 +52,11 @@ jobs:
           sed -i "s|https://REPLACE_WITH_PROD_API_URL/api|https://${BACKEND_HOSTNAME}/api|" src/environments/environment.ts
           sed -i "s|__BACKEND_API_KEY__|${BACKEND_API_KEY}|" src/environments/environment.ts
 
+          SWA_NAME=$(az staticwebapp list --resource-group fbarryRG --query "[?tags.composant=='frontend'].name" -o tsv)
+          SWA_TOKEN=$(az staticwebapp secrets list --name "$SWA_NAME" --query "properties.apiKey" -o tsv)
+          echo "::add-mask::$SWA_TOKEN"
+          echo "swa_token=$SWA_TOKEN" >> "$GITHUB_OUTPUT"
+
       - name: Build (production)
         run: npm run build:prod
 
@@ -58,7 +64,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ steps.resolve.outputs.swa_token }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: "dist/azure-quiz-frontend/browser"
