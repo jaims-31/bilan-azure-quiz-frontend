@@ -1,0 +1,65 @@
+name: Container & IaC
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  container-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Trivy misconfig scan (Dockerfile)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scanners: misconfig
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          format: table
+          output: trivy-config.txt
+
+      - name: Build Docker image
+        if: always()
+        env:
+          API_KEY: ci-dummy-key # valeur factice : on scanne l'image, on ne la déploie pas
+        run: |
+          docker build \
+            --build-arg API_BASE_URL=https://example.invalid/api \
+            --secret id=api_key,env=API_KEY \
+            -t azure-quiz-frontend:ci-scan .
+
+      - name: Trivy image scan (CVE)
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: azure-quiz-frontend:ci-scan
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+          format: table
+          output: trivy-image.txt
+
+      - name: Publish reports to job summary
+        if: always()
+        run: |
+          echo "===== Trivy misconfig =====" && cat trivy-config.txt || echo "no misconfig report"
+          echo "===== Trivy image =====" && cat trivy-image.txt || echo "no image report"
+          {
+            echo "## Trivy misconfig (Dockerfile)"
+            echo '```'
+            cat trivy-config.txt 2>/dev/null || echo "No report"
+            echo '```'
+            echo "## Trivy image scan (CVE, fixable only)"
+            echo '```'
+            cat trivy-image.txt 2>/dev/null || echo "No report"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
