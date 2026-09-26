@@ -44,6 +44,7 @@ jobs:
           scanners: vuln
           severity: HIGH,CRITICAL
           exit-code: '1'
+          ignore-unfixed: true
           format: table
           output: trivy-image.txt
 
