@@ -36,8 +36,11 @@ jobs:
 
       - name: pa11y-ci (WCAG 2 AA)
         run: |
-          echo '{"defaults":{"standard":"WCAG2AA","chromeLaunchConfig":{"args":["--no-sandbox"]}},"urls":["http://localhost:8080/"]}' > .pa11yci.json
-          npx --yes pa11y-ci@3 --config .pa11yci.json 2>&1 | tee pa11y-report.txt
+          # Version exacte + --ignore-scripts : aucun script d'installation npm n'est exécuté
+          npm install --prefix /tmp/pa11y --ignore-scripts --no-audit --no-fund pa11y-ci@3.1.0
+          # Chrome déjà présent sur le runner (Puppeteer n'a rien téléchargé à cause de --ignore-scripts)
+          echo '{"defaults":{"standard":"WCAG2AA","chromeLaunchConfig":{"executablePath":"/usr/bin/google-chrome","args":["--no-sandbox"]}},"urls":["http://localhost:8080/"]}' > .pa11yci.json
+          /tmp/pa11y/node_modules/.bin/pa11y-ci --config .pa11yci.json 2>&1 | tee pa11y-report.txt
           exit ${PIPESTATUS[0]}
 
       - name: Publish report to job summary
