@@ -51,11 +51,15 @@ jobs:
       - name: Publish reports to job summary
         if: always()
         run: |
-          echo "## Trivy misconfig (Dockerfile)" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          cat trivy-config.txt >> "$GITHUB_STEP_SUMMARY" || echo "No report" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "## Trivy image scan (CVE)" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          cat trivy-image.txt >> "$GITHUB_STEP_SUMMARY" || echo "No report" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "===== Trivy misconfig =====" && cat trivy-config.txt || echo "no misconfig report"
+          echo "===== Trivy image =====" && cat trivy-image.txt || echo "no image report"
+          {
+            echo "## Trivy misconfig (Dockerfile)"
+            echo '```'
+            cat trivy-config.txt 2>/dev/null || echo "No report"
+            echo '```'
+            echo "## Trivy image scan (CVE, fixable only)"
+            echo '```'
+            cat trivy-image.txt 2>/dev/null || echo "No report"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
