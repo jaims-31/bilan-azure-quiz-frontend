@@ -40,6 +40,7 @@ jobs:
           target: http://localhost:8080
           fail_action: true
           allow_issue_writing: false
+          rules_file_name: '.zap/rules.tsv'
 
       - name: Publish ZAP report to job summary
         if: always()

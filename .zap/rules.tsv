@@ -1,0 +1,3 @@
+10109	IGNORE	(Modern Web Application: informational, not a vulnerability)
+10110	IGNORE	(Dangerous JS Functions: found in compiled Angular framework bundle, not in app code)
+10055	WARN	(CSP)
