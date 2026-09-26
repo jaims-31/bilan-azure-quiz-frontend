@@ -1,3 +1,4 @@
 10109	IGNORE	(Modern Web Application: informational, not a vulnerability)
-10110	IGNORE	(Dangerous JS Functions: found in compiled Angular framework bundle, not in app code)
-10055	WARN	(CSP)
+10110	IGNORE	(Dangerous JS Functions: compiled Angular framework bundle, not app code)
+10049	IGNORE	(Cacheable content: public static assets, no sensitive data)
+10055	IGNORE	(CSP style-src unsafe-inline: required by Angular component styles; script-src stays strict self)
