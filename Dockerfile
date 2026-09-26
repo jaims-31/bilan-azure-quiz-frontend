@@ -18,21 +18,22 @@ FROM node:24-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY . .
 
 ARG API_BASE_URL
-ARG API_KEY
-RUN test -n "$API_BASE_URL" && test -n "$API_KEY" || (echo "API_BASE_URL and API_KEY build args are required" && exit 1)
-RUN sed -i "s#https://REPLACE_WITH_PROD_API_URL/api#${API_BASE_URL}#" src/environments/environment.ts \
- && sed -i "s/__BACKEND_API_KEY__/${API_KEY}/" src/environments/environment.ts
+RUN --mount=type=secret,id=api_key,required=true \
+    API_KEY="$(cat /run/secrets/api_key)" && \
+    test -n "$API_BASE_URL" || (echo "API_BASE_URL build arg is required" && exit 1) && \
+    sed -i "s#https://REPLACE_WITH_PROD_API_URL/api#${API_BASE_URL}#" src/environments/environment.ts && \
+    sed -i "s/__BACKEND_API_KEY__/${API_KEY}/" src/environments/environment.ts
 
 RUN npm run build:prod
 
 # ── Runtime stage ────────────────────────────────────────────────────────────
-FROM nginx:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist/azure-quiz-frontend/browser /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 8080
