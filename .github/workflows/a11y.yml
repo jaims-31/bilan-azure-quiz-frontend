@@ -1,0 +1,49 @@
+name: Accessibility
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Build Docker image
+        env:
+          API_KEY: ci-dummy-key # valeur factice
+        run: |
+          docker build \
+            --build-arg API_BASE_URL=https://example.invalid/api \
+            --secret id=api_key,env=API_KEY \
+            -t azure-quiz-frontend:a11y .
+
+      - name: Start app container
+        run: |
+          docker run -d --name frontend -p 8080:8080 azure-quiz-frontend:a11y
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/healthz && exit 0
+            sleep 2
+          done
+          docker logs frontend
+          exit 1
+
+      - name: pa11y-ci (WCAG 2 AA)
+        run: |
+          echo '{"defaults":{"standard":"WCAG2AA","chromeLaunchConfig":{"args":["--no-sandbox"]}},"urls":["http://localhost:8080/"]}' > .pa11yci.json
+          npx --yes pa11y-ci@3 --config .pa11yci.json 2>&1 | tee pa11y-report.txt
+          exit ${PIPESTATUS[0]}
+
+      - name: Publish report to job summary
+        if: always()
+        run: |
+          echo "## Accessibility (pa11y-ci, WCAG 2 AA)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat pa11y-report.txt >> "$GITHUB_STEP_SUMMARY" || echo "No report" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
